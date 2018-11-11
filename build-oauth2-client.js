@@ -1,8 +1,16 @@
 //@ts-check
 
+/**
+ * @module build-oauth2-client
+ */
+
 const fs = require("fs").promises;
 const { google } = require("googleapis");
 const readline = require("readline");
+
+/**
+ * @typedef {import("google-auth-library").OAuth2Client} OAuth2Client
+ */
 
 /**
  * Returns an OAuth 2 client that can be used with Google APIs.
@@ -28,16 +36,15 @@ const readline = require("readline");
  * const client = await buildOAuth2Client(["https://www.googleapis.com/auth/admin.directory.group.readonly"]);
  * google.admin({ version: "directory_v1", auth: client })
  *
- * @see https://developers.google.com/admin-sdk/directory/v1/quickstart/nodejs
- *
- * @typedef {object} Options
- * @prop {string=} credentialsFilePath path where to find the credentials file
- * @prop {string=} tokenCachePath path where the function can cache the token
+ * @see the code was adapted from {@link https://developers.google.com/admin-sdk/directory/v1/quickstart/nodejs|the Node.js Quickstart for the Directory API}
  *
  * @param {string[]} scopes permissions to ask the user for
- * @param {Options} options
+ * @param {Object} options
+ * @param {string} [options.credentialsFilePath=credentials.json] path where to find the credentials file
+ * @param {string} [options.tokenCachePath=token.json] path where the function can cache the token
+ * @returns {Promise<OAuth2Client>}
  */
-const buildOAuth2Client = async (
+exports.buildOAuth2Client = async (
   scopes,
   {
     credentialsFilePath = "credentials.json",
@@ -60,6 +67,11 @@ const buildOAuth2Client = async (
   return oauth2Client;
 };
 
+/**
+ *
+ * @param {string} path
+ * @returns {Promise<{clientId: string, clientSecret: string, redirectUri: string}>}
+ */
 const readCredentialsFile = async path => {
   const content = await fs.readFile(path);
   const credentials = JSON.parse(content.toString());
@@ -71,6 +83,13 @@ const readCredentialsFile = async path => {
   };
 };
 
+/**
+ *
+ * @template T
+ * @param {function(): T} fn
+ * @param {string} path
+ * @returns {Promise<T>}
+ */
 const cacheUsingJsonFile = async (fn, path) => {
   try {
     const content = await fs.readFile(path);
@@ -87,6 +106,11 @@ const cacheUsingJsonFile = async (fn, path) => {
   }
 };
 
+/**
+ *
+ * @param {OAuth2Client} oauth2Client
+ * @param {string[]} scopes
+ */
 const acquireTokenUsingCliCode = async (oauth2Client, scopes) => {
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
@@ -97,6 +121,11 @@ const acquireTokenUsingCliCode = async (oauth2Client, scopes) => {
   return tokens;
 };
 
+/**
+ *
+ * @param {string} authUrl
+ * @returns {Promise<string>}
+ */
 const askForCodeThroughCli = async authUrl => {
   console.log("Authorize this app by visiting this url:", authUrl);
   const code = await askQuestionThroughCli(
@@ -105,18 +134,19 @@ const askForCodeThroughCli = async authUrl => {
   return code;
 };
 
+/**
+ *
+ * @param {string} question
+ * @returns {Promise<string>}
+ */
 const askQuestionThroughCli = async question =>
   new Promise(resolve => {
-    const interface = readline.createInterface({
+    const cli = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
-    interface.question(question, response => {
-      interface.close();
+    cli.question(question, response => {
+      cli.close();
       resolve(response);
     });
   });
-
-module.exports = {
-  buildOAuth2Client
-};

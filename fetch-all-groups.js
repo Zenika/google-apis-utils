@@ -1,12 +1,34 @@
 //@ts-check
 
+/**
+ * @module fetch-all-groups
+ */
+
 const { google } = require("googleapis");
 
 /**
- * @typedef {object} Group see https://developers.google.com/admin-sdk/directory/v1/reference/groups#resource
+ * @typedef {import("google-auth-library").OAuth2Client} OAuth2Client
+ */
+
+/**
+ * A Group resource from Google.
  *
- * @param {*} auth an OAuth 2.0 client to use to connect to the API
- * @param {object} options see request parameters at https://developers.google.com/admin-sdk/directory/v1/reference/groups/list
+ * @see {@link https://developers.google.com/admin-sdk/directory/v1/reference/groups#resource}
+ * @typedef {import("googleapis").admin_directory_v1.Schema$Group} Group
+ */
+
+/**
+ * Parameters for the list operation on groups.
+ *
+ * @see {@link https://developers.google.com/admin-sdk/directory/v1/reference/groups/list}
+ * @typedef {import("googleapis").admin_directory_v1.Params$Resource$Groups$List} ListGroupsParameters
+ */
+
+/**
+ * Fetches all groups for the given domain.
+ *
+ * @param {OAuth2Client} auth an OAuth 2.0 client to use to connect to the API
+ * @param {ListGroupsParameters} parameters
  * @returns {AsyncIterableIterator<Group>}
  *
  * @example
@@ -15,29 +37,24 @@ const { google } = require("googleapis");
  *   console.log(group.email)
  * }
  */
-async function* fetchAllGroups(
-  auth,
-  { domain = "zenika.com", ...options } = {}
-) {
+exports.fetchAllGroups = async function*(auth, parameters = {}) {
   const directoryApi = google.admin({ version: "directory_v1", auth });
-  let nextPageToken;
+  let nextPageToken = "";
   let atFirstPage = true;
   while (atFirstPage || nextPageToken) {
-    atFirstPage = false;
     const response = await directoryApi.groups.list({
-      domain,
-      ...options,
+      ...parameters,
       pageToken: nextPageToken
     });
     yield* response.data.groups;
     nextPageToken = response.data.nextPageToken;
+    atFirstPage = false;
   }
-}
+};
 
-fetchAllGroups.requiredScopes = [
+/**
+ * Scopes required for fetchAllGroups to work.
+ */
+exports.fetchAllGroups.requiredScopes = [
   "https://www.googleapis.com/auth/admin.directory.group.readonly"
 ];
-
-module.exports = {
-  fetchAllGroups
-};
