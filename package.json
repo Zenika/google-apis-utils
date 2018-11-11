@@ -1,0 +1,22 @@
+{
+  "name": "@zenika/google-apis-utils",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint *.js",
+    "format:check": "prettier *.js *.json",
+    "format": "npm run format:check -- --write"
+  },
+  "dependencies": {
+    "googleapis": "^34.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^10.12.5",
+    "eslint": "^5.8.0",
+    "prettier": "^1.15.1"
+  },
+  "engines": {
+    "node": ">10"
+  }
+}
